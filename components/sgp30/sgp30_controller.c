@@ -2,6 +2,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "i2c_controller.h"
+#include "crc8.h"
 
 #define SGP30_CMD_INIT 0x2003
 #define SGP30_CMD_MEASURE 0x2008
@@ -36,8 +37,14 @@ esp_err_t sgp30_measure(i2c_master_dev_handle_t dev, sgp30_measurement_t *out) {
     error = i2c_read_from_device(dev, read_buf, sizeof(read_buf), pdMS_TO_TICKS(SGP_TIMEOUT_MS));
     if(error != ESP_OK) return error;
 
-    //Parse measurement
-    //TODO Add crc check later
+    //Parse measurement and check crc
+
+    uint8_t eco2_crc = read_buf[2];
+    uint8_t tvoc_crc = read_buf[5];
+
+    if(eco2_crc != crc8(&read_buf[0], 2) || tvoc_crc != crc8(&read_buf[3], 2)) {
+        return ESP_ERR_INVALID_CRC;
+    }
 
     out->eco2 = (read_buf[0] << 8) | read_buf[1];
     out->tvoc = (read_buf[3] << 8) | read_buf[4];

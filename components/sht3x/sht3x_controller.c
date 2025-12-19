@@ -2,6 +2,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "i2c_controller.h"
+#include "crc8.h"
 
 #define SHT3X_CMD_RESET 0x30A2 
 #define SHT3X_CMD_MEASURE 0x2400
@@ -35,11 +36,16 @@ esp_err_t sht3x_measure(i2c_master_dev_handle_t dev, sht3x_measurement_t *out) {
     error = i2c_read_from_device(dev, read_buf, sizeof(read_buf), pdMS_TO_TICKS(SHT_TIMEOUT_MS));
     if(error != ESP_OK) return error;
 
-    //Parse measurement
-    //TODO Add crc check later
+    //Parse measurement and check crc
 
     uint16_t raw_temp = (read_buf[0] << 8) | read_buf[1];
     uint16_t raw_humidity = (read_buf[3] << 8) | read_buf[4];
+    uint8_t temperature_crc = read_buf[2];
+    uint8_t humidity_crc = read_buf[5];
+
+    if(temperature_crc != crc8(&read_buf[0], 2) || humidity_crc != crc8(&read_buf[3], 2)) {
+        return ESP_ERR_INVALID_CRC;
+    }
 
     out->temp = (-45.0f + 175.0f * (((float)raw_temp) / 65535.0f));
     out->humidity = (100.0f * ((float)raw_humidity / 65535.0f));
