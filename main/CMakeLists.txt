@@ -1,5 +1,5 @@
 idf_component_register(
     SRCS "app_main.c"
     INCLUDE_DIRS "."
-    REQUIRES driver i2c sgp30 sht3x
+    REQUIRES sensor_service
 )
