@@ -1,3 +1,4 @@
+#include <math.h>
 #include "sensor_service.h"
 #include "driver/i2c_master.h"
 #include "freertos/FreeRTOS.h"
@@ -5,11 +6,14 @@
 #include "sgp30_controller.h"
 #include "sht3x_controller.h"
 #include "i2c_controller.h"
+#include "esp_log.h"
 
 #define SGP30_ADDR 0x58
 #define SHT3X_ADDR 0x44
 
 #define SENSOR_TASK_PERIOD_MS 1000
+
+static float calculate_absolute_humidity(float temp, float humidity);
 
 static i2c_master_bus_handle_t bus_handle;
 static i2c_master_dev_handle_t sgp_handle;
@@ -20,10 +24,12 @@ static QueueHandle_t sensor_queue;
 
 static void sensor_task(void *arg) {
     TickType_t last_wake = xTaskGetTickCount();
+    bool shtAvailable;
 
     for (;;) {
         sht3x_measurement_t sht_measurement;
         sgp30_measurement_t sgp_measurement;
+        shtAvailable = false;
 
         sensor_data_t data;
         data.timestamp_ms = xTaskGetTickCount() * portTICK_PERIOD_MS;
@@ -31,6 +37,13 @@ static void sensor_task(void *arg) {
         if (sht3x_measure(sht_handle, &sht_measurement) == ESP_OK) {
             data.temperature = sht_measurement.temp;
             data.humidity = sht_measurement.humidity;
+            shtAvailable = true;
+        }
+
+        if(shtAvailable) {
+            //Calculate and send abs humidity
+            //TODO This returns an esp_err_t should do something with it
+            sgp30_send_absolute_humidity(sgp_handle, calculate_absolute_humidity(sht_measurement.temp, sht_measurement.humidity));
         }
 
         if (sgp30_measure(sgp_handle, &sgp_measurement) == ESP_OK) {
@@ -71,4 +84,9 @@ bool get_sensor_service_data(sensor_data_t *data) {
     if (!sensor_queue) return false;
 
     return xQueueReceive(sensor_queue, data, 0) == pdPASS;
+}
+
+//Calculates and returns the absolute humidity in g/m^3
+static float calculate_absolute_humidity(float temp, float humidity) {
+    return 216.7f * (((humidity/100.0f) * 6.112f * expf((17.62f * temp) / (243.12f + temp))) / (273.15f + temp));
 }

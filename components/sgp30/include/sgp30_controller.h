@@ -38,3 +38,12 @@ esp_err_t sgp_init(i2c_master_dev_handle_t dev);
  * @return esp_err_t ESP error code
  */
 esp_err_t sgp30_measure(i2c_master_dev_handle_t dev, sgp30_measurement_t *out);
+
+/**
+ * @brief Sends an absolute humidity reading to the sgp30 to use for more accurate co2 and tvoc measurements
+ *
+ * @param dev I2C device handle for the SGP30
+ * @param absolute_humidity Float value of the humidity in g/m^3
+ * @return esp_err_t ESP error code
+ */
+esp_err_t sgp30_send_absolute_humidity(i2c_master_dev_handle_t dev, float absolute_humidity);
