@@ -47,3 +47,21 @@ esp_err_t sgp30_measure(i2c_master_dev_handle_t dev, sgp30_measurement_t *out);
  * @return esp_err_t ESP error code
  */
 esp_err_t sgp30_send_absolute_humidity(i2c_master_dev_handle_t dev, float absolute_humidity);
+
+/**
+ * @brief Sets the air quality baseline levels on the SGP30
+ *
+ * @param dev I2C device handle for the SGP30
+ * @param baseline Pointer to a structure that holds valid baseline data
+ * @return esp_err_t ESP error code
+ */
+esp_err_t sgp30_set_iaq_baseline(i2c_master_dev_handle_t dev, const sgp30_measurement_t *baseline);
+
+/**
+ * @brief Reads the current iaq baseline levels from the SGP30
+ *
+ * @param dev I2C device handle for the SGP30
+ * @param out Pointer to a structure that receives the baseline data
+ * @return esp_err_t ESP error code
+ */
+esp_err_t sgp30_get_iaq_baseline(i2c_master_dev_handle_t dev, sgp30_measurement_t *baseline);
