@@ -10,6 +10,7 @@ static const char *TAG = "APP_MAIN";
 
 void app_main(void)
 {
+    //Initialise non-volatile storage for baseline sensor value storage
     esp_err_t err = nvs_flash_init();
     if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         // NVS partition was truncated and needs to be erased

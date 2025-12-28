@@ -33,7 +33,11 @@ static void sensor_task(void *arg) {
     static int64_t boot_us = 0;
     static int64_t last_baseline_store_us = 0;
     static bool baseline_training_complete = false;
-    bool shtAvailable;
+    static uint8_t shtSampleCount = 9;
+
+    static float last_temp = NAN;
+    static float last_humidity = NAN;
+    static uint32_t last_abs_humidity = 0;
     
     if (boot_us == 0) {
         boot_us = esp_timer_get_time();
@@ -42,22 +46,26 @@ static void sensor_task(void *arg) {
     for (;;) {
         sht3x_measurement_t sht_measurement;
         sgp30_measurement_t sgp_measurement;
-        shtAvailable = false;
 
         sensor_data_t data;
         data.timestamp_ms = xTaskGetTickCount() * portTICK_PERIOD_MS;
 
-        if (sht3x_measure(sht_handle, &sht_measurement) == ESP_OK) {
-            data.temperature = sht_measurement.temp;
-            data.humidity = sht_measurement.humidity;
-            shtAvailable = true;
+        if(shtSampleCount == 9) {
+            if (sht3x_measure(sht_handle, &sht_measurement) == ESP_OK) {
+                last_temp = sht_measurement.temp;
+                last_humidity = sht_measurement.humidity;
+
+                last_abs_humidity = calculate_absolute_humidity(sht_measurement.temp, sht_measurement.humidity);
+            }
+            shtSampleCount = 0;
         }
 
-        if(shtAvailable) {
-            //Calculate and send abs humidity
-            //TODO This returns an esp_err_t should do something with it
-            sgp30_send_absolute_humidity(sgp_handle, calculate_absolute_humidity(sht_measurement.temp, sht_measurement.humidity));
-        }
+        shtSampleCount++;
+
+        data.temperature = last_temp;
+        data.humidity = last_humidity;
+
+        sgp30_send_absolute_humidity(sgp_handle, last_abs_humidity);
 
         if (sgp30_measure(sgp_handle, &sgp_measurement) == ESP_OK) {
             data.eco2 = sgp_measurement.eco2;

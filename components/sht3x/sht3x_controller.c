@@ -5,7 +5,7 @@
 #include "crc8.h"
 
 #define SHT3X_CMD_RESET 0x30A2 
-#define SHT3X_CMD_MEASURE 0x2400
+#define SHT3X_CMD_MEASURE 0x2416
 #define SHT_TIMEOUT_MS 100
 #define SHT_INIT_WARM_UP_MS 20
 #define SHT_MEASURE_WAIT_MS 20
