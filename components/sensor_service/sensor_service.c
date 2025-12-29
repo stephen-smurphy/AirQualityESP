@@ -25,7 +25,7 @@ static i2c_master_dev_handle_t sgp_handle;
 static i2c_master_dev_handle_t sht_handle;
 
 static TaskHandle_t sensor_task_handle;
-static QueueHandle_t sensor_queue;
+QueueHandle_t sensor_queue;
 
 static void sensor_task(void *arg) {
     TickType_t last_wake = xTaskGetTickCount();
@@ -124,12 +124,6 @@ esp_err_t sensor_service_start() {
     BaseType_t ok = xTaskCreate(sensor_task, "Sensor Task", 4096, NULL, 5, &sensor_task_handle);
 
     return ok == pdPASS ? ESP_OK : ESP_ERR_NO_MEM;
-}
-
-bool get_sensor_service_data(sensor_data_t *data) {
-    if (!sensor_queue) return false;
-
-    return xQueueReceive(sensor_queue, data, 0) == pdPASS;
 }
 
 //Calculates and returns the absolute humidity in g/m^3

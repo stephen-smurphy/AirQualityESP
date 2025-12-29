@@ -3,3 +3,7 @@ build/
 
 #IDE Files
 .vscode/
+
+#Project Config Files
+sdkconfig
+sdkconfig.old

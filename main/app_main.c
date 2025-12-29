@@ -1,12 +1,14 @@
 #include "sensor_service.h"
+#include "mqtt_service.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_log.h"
+#include "esp_event.h"
+#include "wifi_service.h"
+#include "esp_netif.h"
 
 #include "nvs_flash.h"
 #include "nvs.h"
-
-static const char *TAG = "APP_MAIN";
 
 void app_main(void)
 {
@@ -20,13 +22,12 @@ void app_main(void)
     }
     ESP_ERROR_CHECK(err);
 
-    sensor_data_t data;
+    ESP_ERROR_CHECK(esp_netif_init());
+    ESP_ERROR_CHECK(esp_event_loop_create_default());
+    ESP_ERROR_CHECK(wifi_service_start());
+
     ESP_ERROR_CHECK(sensor_service_start());
 
-    for(;;) {
-        if(get_sensor_service_data(&data)) {
-            ESP_LOGI(TAG, "TIMESTAMP: %u Temp: %f Humidity: %f eCO2: %u TVOC: %u", data.timestamp_ms, data.temperature, data.humidity, data.eco2, data.tvoc);
-        }
-        vTaskDelay(pdMS_TO_TICKS(5000));
-    }
+    ESP_ERROR_CHECK(mqtt_service_start());
+    
 }
