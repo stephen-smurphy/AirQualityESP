@@ -33,11 +33,7 @@ static void sensor_task(void *arg) {
     static int64_t boot_us = 0;
     static int64_t last_baseline_store_us = 0;
     static bool baseline_training_complete = false;
-    static uint8_t shtSampleCount = 9;
-
-    static float last_temp = NAN;
-    static float last_humidity = NAN;
-    static uint32_t last_abs_humidity = 0;
+    static uint8_t shtSampleCount = 10;
     
     if (boot_us == 0) {
         boot_us = esp_timer_get_time();
@@ -48,31 +44,28 @@ static void sensor_task(void *arg) {
         sgp30_measurement_t sgp_measurement;
 
         sensor_data_t data;
-        data.timestamp_ms = xTaskGetTickCount() * portTICK_PERIOD_MS;
 
-        if(shtSampleCount == 9) {
+        if(shtSampleCount == 10) {
+            data.timestamp_ms = xTaskGetTickCount() * portTICK_PERIOD_MS;
+
             if (sht3x_measure(sht_handle, &sht_measurement) == ESP_OK) {
-                last_temp = sht_measurement.temp;
-                last_humidity = sht_measurement.humidity;
-
-                last_abs_humidity = calculate_absolute_humidity(sht_measurement.temp, sht_measurement.humidity);
+                data.temperature = sht_measurement.temp;
+                data.humidity = sht_measurement.humidity;
+                sgp30_send_absolute_humidity(sgp_handle, calculate_absolute_humidity(sht_measurement.temp, sht_measurement.humidity));
             }
-            shtSampleCount = 0;
-        }
+            if (sgp30_measure(sgp_handle, &sgp_measurement) == ESP_OK) {
+                data.eco2 = sgp_measurement.eco2;
+                data.tvoc = sgp_measurement.tvoc;
+            }
 
+            xQueueOverwrite(sensor_queue, &data);
+            shtSampleCount = 1;
+        }
+        else {
+            //SGP30 needs a measurement every second to maintain accuracy, even if we only need a sample every 10 seconds
+            sgp30_measure(sgp_handle, &sgp_measurement);
+        }
         shtSampleCount++;
-
-        data.temperature = last_temp;
-        data.humidity = last_humidity;
-
-        sgp30_send_absolute_humidity(sgp_handle, last_abs_humidity);
-
-        if (sgp30_measure(sgp_handle, &sgp_measurement) == ESP_OK) {
-            data.eco2 = sgp_measurement.eco2;
-            data.tvoc = sgp_measurement.tvoc;
-        }
-
-        xQueueOverwrite(sensor_queue, &data);
 
         int64_t now_us = esp_timer_get_time();
         int64_t uptime_sec = (now_us - boot_us) / 1000000;
@@ -81,9 +74,7 @@ static void sensor_task(void *arg) {
             baseline_training_complete = true;
         }
 
-        if (baseline_training_complete &&
-            (now_us - last_baseline_store_us >= 3600LL * 1000000LL)) {
-
+        if (baseline_training_complete && (now_us - last_baseline_store_us >= 3600LL * 1000000LL)) {
             sgp30_measurement_t baseline;
             if (sgp30_get_iaq_baseline(sgp_handle, &baseline) == ESP_OK) {
                 if(store_baseline_to_nvs(&baseline)) {
@@ -96,9 +87,7 @@ static void sensor_task(void *arg) {
 }
 
 esp_err_t sensor_service_start() {
-    esp_err_t err;
-
-    err = i2c_init_bus(&bus_handle);
+    esp_err_t err = i2c_init_bus(&bus_handle);
     if(err != ESP_OK) return err;
 
     err = i2c_add_device(&bus_handle, SGP30_ADDR, &sgp_handle);
@@ -131,6 +120,7 @@ static float calculate_absolute_humidity(float temp, float humidity) {
     return 216.7f * (((humidity/100.0f) * 6.112f * expf((17.62f * temp) / (243.12f + temp))) / (273.15f + temp));
 }
 
+//Checks NVS for baseline CO2 and TVOC values, returns true if the values are loaded into *baseline
 static bool load_baseline_from_nvs(sgp30_measurement_t *baseline) {
     if (baseline == NULL) return false;
 
@@ -156,6 +146,7 @@ static bool load_baseline_from_nvs(sgp30_measurement_t *baseline) {
     return true;
 }
 
+//Stores the baseline values in the *baseline buffer to NVS, returns true if successful
 static bool store_baseline_to_nvs(const sgp30_measurement_t *baseline) {
     if (baseline == NULL) return false;
 

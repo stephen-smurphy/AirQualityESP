@@ -80,7 +80,6 @@ static void wifi_mqtt_task(void *arg) {
             } else {
                 ESP_LOGW(TAG, "MQTT not connected, dropping data");
             }
-            vTaskDelay(pdMS_TO_TICKS(5000));
         }
     }
 }
