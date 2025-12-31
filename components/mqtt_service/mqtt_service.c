@@ -84,7 +84,7 @@ static void wifi_mqtt_task(void *arg) {
     }
 }
 
-esp_err_t mqtt_service_start() {
+esp_err_t mqtt_service_start(void) {
      esp_mqtt_client_config_t mqtt_cfg = {
         .broker.address.uri = CONFIG_MQTT_URI,
         .credentials.username = CONFIG_MQTT_USERNAME,

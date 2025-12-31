@@ -29,5 +29,4 @@ void app_main(void)
     ESP_ERROR_CHECK(sensor_service_start());
 
     ESP_ERROR_CHECK(mqtt_service_start());
-    
 }

@@ -86,7 +86,7 @@ static void sensor_task(void *arg) {
     }
 }
 
-esp_err_t sensor_service_start() {
+esp_err_t sensor_service_start(void) {
     esp_err_t err = i2c_init_bus(&bus_handle);
     if(err != ESP_OK) return err;
 
