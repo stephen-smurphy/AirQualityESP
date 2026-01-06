@@ -2,6 +2,13 @@
 
 This project is an air quality monitoring device built using the ESP32-C6 chip and written using ESP-IDF. It collects environmental data using the SGP30 (TVOC and eCO2) and SHT3X (temperature and humidity) sensors and transmits the data via MQTT over Wi-Fi.  
 
+<p align="center">
+   <img width="1910" height="911" alt="image" src="https://github.com/user-attachments/assets/bf394c27-c55b-477b-8374-79368174d694" />
+</p>
+<p align="center">
+  <em>Figure 1: Air quality data visualised using node-red dashboard</em>
+</p>
+
 ## Features
 
 - Measures indoor air quality
@@ -22,3 +29,4 @@ This project is an air quality monitoring device built using the ESP32-C6 chip a
 
 2. **Configure Project**  
    "idf.py menuconfig" to configure Wi-Fi SSID and Password, MQTT URI, Username and Password
+   
