@@ -10,11 +10,14 @@
 #include "nvs_flash.h"
 #include "nvs.h"
 #include "esp_timer.h"
+#include "esp_log.h"
 
 #define SGP30_ADDR 0x58
 #define SHT3X_ADDR 0x44
 
 #define SENSOR_TASK_PERIOD_MS 1000
+
+static const char *TAG = "SENSOR_SERVICE";
 
 static bool load_baseline_from_nvs(sgp30_measurement_t *baseline);
 static bool store_baseline_to_nvs(const sgp30_measurement_t *baseline);
@@ -102,8 +105,12 @@ esp_err_t sensor_service_start(void) {
     //Check for NVS baseline and send to SGP30 if found
     sgp30_measurement_t baseline;
     if(load_baseline_from_nvs(&baseline)) {
+        ESP_LOGI(TAG, "Baseline values loaded, co2: %u tvoc: %u", baseline.eco2, baseline.tvoc);
         err = sgp30_set_iaq_baseline(sgp_handle, &baseline);
         if(err != ESP_OK) return err;
+    }
+    else {
+        ESP_LOGI(TAG, "Couldn't load baseline");
     }
 
     err = sht3x_init(sht_handle);
