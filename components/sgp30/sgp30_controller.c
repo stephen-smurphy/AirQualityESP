@@ -1,6 +1,8 @@
 #include "sgp30_controller.h"
+
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+
 #include "i2c_controller.h"
 #include "crc8.h"
 

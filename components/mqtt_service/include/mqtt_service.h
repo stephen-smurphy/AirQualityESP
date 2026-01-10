@@ -6,8 +6,8 @@
 
 #pragma once
 
-#include "sensor_service.h"
 #include "esp_err.h"
+#include <stdbool.h>
 
 /**
 * @brief Initialises the mqtt client configuration and starts the FreeRTOS MQTT task

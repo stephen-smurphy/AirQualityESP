@@ -1,8 +1,11 @@
 #include "mqtt_service.h"
+
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "mqtt_client.h"
 #include "esp_log.h"
+
+#include "sensor_service.h"
 
 static const char *TAG = "MQTT";
 

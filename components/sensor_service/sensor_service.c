@@ -1,16 +1,17 @@
-#include <math.h>
 #include "sensor_service.h"
+
+#include <math.h>
 #include "driver/i2c_master.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "sgp30_controller.h"
-#include "sht3x_controller.h"
-#include "i2c_controller.h"
-#include "esp_log.h"
-#include "nvs_flash.h"
 #include "nvs.h"
 #include "esp_timer.h"
 #include "esp_log.h"
+
+#include "sgp30_controller.h"
+#include "sht3x_controller.h"
+#include "i2c_controller.h"
+
 
 #define SGP30_ADDR 0x58
 #define SHT3X_ADDR 0x44

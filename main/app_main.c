@@ -1,9 +1,8 @@
+#include "esp_err.h"
+#include "nvs_flash.h"
 #include "sensor_service.h"
 #include "mqtt_service.h"
-#include "esp_event.h"
 #include "wifi_service.h"
-#include "esp_netif.h"
-#include "nvs_flash.h"
 
 static esp_err_t init_nvs(void);
 
@@ -24,7 +23,6 @@ static esp_err_t init_nvs(void) {
         err = nvs_flash_erase();
         if (err != ESP_OK) return err;
         err = nvs_flash_init();
-        return err;
     }
     return err;
 }
