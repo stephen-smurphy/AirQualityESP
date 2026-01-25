@@ -6,6 +6,7 @@
 #include "esp_log.h"
 
 #include "sensor_service.h"
+#include "led_service.h"
 
 static const char *TAG = "MQTT";
 
@@ -68,6 +69,23 @@ static void wifi_mqtt_task(void *arg) {
     uint32_t last_timestamp = 0;
     for (;;) {
         if (xQueueReceive(sensor_queue, &data, portMAX_DELAY) == pdPASS) {
+            //Set LED according to co2 level
+            if(data.eco2 > 5000) {
+                led_service_set_led(LED_RED, LED_STATE_BLINK, 200);
+                led_service_set_led(LED_YELLOW, LED_STATE_LOW, 0);
+                led_service_set_led(LED_GREEN, LED_STATE_LOW, 0);
+            }
+            else if(data.eco2 > 1000) {
+                led_service_set_led(LED_RED, LED_STATE_LOW, 0);
+                led_service_set_led(LED_YELLOW, LED_STATE_BLINK, 200);
+                led_service_set_led(LED_GREEN, LED_STATE_LOW, 0);
+            }
+            else {
+                led_service_set_led(LED_RED, LED_STATE_LOW, 0);
+                led_service_set_led(LED_YELLOW, LED_STATE_LOW, 0);
+                led_service_set_led(LED_GREEN, LED_STATE_BLINK, 200);
+            }
+
             if(connected) {
                 if(data.timestamp_ms != last_timestamp) {
                     last_timestamp = data.timestamp_ms;
