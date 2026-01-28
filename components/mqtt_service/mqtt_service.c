@@ -16,6 +16,13 @@ static esp_mqtt_client_handle_t client = NULL;
 static TaskHandle_t wifi_mqtt_task_handle;
 static bool connected = false;
 
+typedef enum {
+    CO2_LEVEL_INIT,
+    CO2_LEVEL_OK,
+    CO2_LEVEL_WARNING,
+    CO2_LEVEL_DANGER
+} co2_level_t;
+
 static void log_error_if_nonzero(const char *message, int error_code)
 {
     if (error_code != 0) {
@@ -67,23 +74,33 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
 static void wifi_mqtt_task(void *arg) {
     sensor_data_t data;
     uint32_t last_timestamp = 0;
+    co2_level_t last_co2 = CO2_LEVEL_INIT;
     for (;;) {
         if (xQueueReceive(sensor_queue, &data, portMAX_DELAY) == pdPASS) {
             //Set LED according to co2 level
-            if(data.eco2 > 5000) {
+            if(data.eco2 >= 5000 && last_co2 != CO2_LEVEL_DANGER) {
+                ESP_LOGI(TAG, "Entering first block co2 is: %u", data.eco2);
+                last_co2 = CO2_LEVEL_DANGER;
                 led_service_set_led(LED_RED, LED_STATE_BLINK, 200);
                 led_service_set_led(LED_YELLOW, LED_STATE_LOW, 0);
                 led_service_set_led(LED_GREEN, LED_STATE_LOW, 0);
             }
-            else if(data.eco2 > 1000) {
+            else if(data.eco2 >= 1000 && data.eco2 < 5000 && last_co2 != CO2_LEVEL_WARNING) {
+                ESP_LOGI(TAG, "Entering second block co2 is: %u", data.eco2);
+                last_co2 = CO2_LEVEL_WARNING;
                 led_service_set_led(LED_RED, LED_STATE_LOW, 0);
                 led_service_set_led(LED_YELLOW, LED_STATE_BLINK, 200);
                 led_service_set_led(LED_GREEN, LED_STATE_LOW, 0);
             }
-            else {
+            else if(data.eco2 < 1000 && last_co2 != CO2_LEVEL_OK) {
+                ESP_LOGI(TAG, "Entering third block co2 is: %u", data.eco2);
+                last_co2 = CO2_LEVEL_OK;
                 led_service_set_led(LED_RED, LED_STATE_LOW, 0);
                 led_service_set_led(LED_YELLOW, LED_STATE_LOW, 0);
                 led_service_set_led(LED_GREEN, LED_STATE_BLINK, 200);
+            }
+            else {
+                ESP_LOGI(TAG, "State hasn't changed co2 is: %u", data.eco2);
             }
 
             if(connected) {
