@@ -3,12 +3,15 @@
 #include "sensor_service.h"
 #include "mqtt_service.h"
 #include "wifi_service.h"
+#include "led_service.h"
 
 static esp_err_t init_nvs(void);
 
 void app_main(void)
 {
     ESP_ERROR_CHECK(init_nvs());
+
+    ESP_ERROR_CHECK(led_service_init());
 
     ESP_ERROR_CHECK(wifi_service_start());
 
