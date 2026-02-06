@@ -20,19 +20,28 @@ static esp_err_t check_for_updates() {
     };
 
     esp_http_client_handle_t client = esp_http_client_init(&config);
-    if (!client) return ESP_FAIL;
-
-    esp_err_t err = esp_http_client_perform(client);
-    if (err != ESP_OK) {
-        esp_http_client_cleanup(client);
-        return ESP_ERR_HTTP_BASE;
+    if (!client) {
+        ESP_LOGE(TAG, "Failed to init client");
+        return ESP_FAIL;
     } 
 
-    int len = esp_http_client_read_response(client, latest_version, sizeof(latest_version) - 1);
-    if (len >= 0) {
+    esp_err_t err = esp_http_client_open(client, 0);
+    if(err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to open HTTP connection: %s", esp_err_to_name(err));
+        esp_http_client_cleanup(client);
+        return err;
+    }
+
+    int64_t status = esp_http_client_fetch_headers(client);
+    if(status < 0) {
+        ESP_LOGE(TAG, "Failed to fetch headers");
+        esp_http_client_cleanup(client);
+        return ESP_FAIL;
+    }
+
+    int len = esp_http_client_read(client, latest_version, sizeof(latest_version) - 1);
+    if (len > 0) {
         latest_version[len] = '\0';
-        char *newline = strpbrk(latest_version, "\r\n");
-        if (newline) *newline = '\0';
     } 
     else {
         ESP_LOGW(TAG, "Failed to read version.txt, len=%d", len);
@@ -52,7 +61,7 @@ static esp_err_t check_for_updates() {
 
 void ota_task(void *arg) {
     esp_http_client_config_t http_config = {
-        .url = "http://192.168.1.7:8000/firmware.bin",
+        .url = "http://192.168.1.7:8000/AirQualityESP.bin",
         .timeout_ms = 10000,
         .transport_type = HTTP_TRANSPORT_OVER_TCP
     };
