@@ -10,11 +10,18 @@ static const char *TAG = "OTA";
 
 #define FW_VERSION "1.0.0"
 
+/**
+* @brief Retreives a version number from a version.txt file on the OTA webserver 
+*        and checks if the current version is different to the available OTA firmware version
+*
+* @return esp_err_t The esp error code
+*/
 static esp_err_t check_for_updates() {
     char latest_version[16];
 
+    //Uses HTTP only for testing, for production this should use HTTPS and TLS certificates
     esp_http_client_config_t config = {
-        .url = "http://192.168.1.7:8000/version.txt", //TODO REPLACE
+        .url = CONFIG_OTA_UPDATE_VERSION_URL,
         .method = HTTP_METHOD_GET,
         .transport_type = HTTP_TRANSPORT_OVER_TCP
     };
@@ -39,6 +46,7 @@ static esp_err_t check_for_updates() {
         return ESP_FAIL;
     }
 
+    //Reads the payload into the latest_version array and appends a null character to make it a valid C-String
     int len = esp_http_client_read(client, latest_version, sizeof(latest_version) - 1);
     if (len > 0) {
         latest_version[len] = '\0';
@@ -53,15 +61,21 @@ static esp_err_t check_for_updates() {
 
     esp_http_client_cleanup(client);
 
+    //Check if current firmware version matches the version on the server, no need to update if they are the same
     if (strcmp(FW_VERSION, latest_version) != 0) {
         return ESP_OK;
     }
     return ESP_FAIL;
 }
 
+/**
+* @brief The OTA service freeRTOS task
+*
+*/
 void ota_task(void *arg) {
+    //Uses HTTP only for testing, for production this should use HTTPS and TLS certificates
     esp_http_client_config_t http_config = {
-        .url = "http://192.168.1.7:8000/AirQualityESP.bin",
+        .url = CONFIG_OTA_UPDATE_FIRMWARE_URL,
         .timeout_ms = 10000,
         .transport_type = HTTP_TRANSPORT_OVER_TCP
     };

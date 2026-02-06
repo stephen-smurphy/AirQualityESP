@@ -21,3 +21,15 @@ config MQTT_PASSWORD
     default ""
 
 endmenu
+
+menu "OTA Configuration"
+
+config OTA_UPDATE_FIRMWARE_URL
+    string "OTA Update Firmware URL"
+    default ""
+
+config OTA_UPDATE_VERSION_URL
+    string "OTA Update Version URL"
+    default ""
+
+endmenu
