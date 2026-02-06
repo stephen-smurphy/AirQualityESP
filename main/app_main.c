@@ -4,6 +4,7 @@
 #include "mqtt_service.h"
 #include "wifi_service.h"
 #include "led_service.h"
+#include "ota_service.h"
 
 static esp_err_t init_nvs(void);
 
@@ -14,6 +15,8 @@ void app_main(void)
     ESP_ERROR_CHECK(led_service_init());
 
     ESP_ERROR_CHECK(wifi_service_start());
+
+    ESP_ERROR_CHECK(ota_service_start());
 
     ESP_ERROR_CHECK(sensor_service_start());
 

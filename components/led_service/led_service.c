@@ -48,6 +48,7 @@ static void led_service_task(void *arg) {
     for(;;) {
         led_command_t command;
 
+        //Blocks the task while the queue is not empty and processes all the requests before moving on
         while(xQueueReceive(led_queue, &command, 0) == pdTRUE) {
             esp_err_t err = led_command(&command);
             if(err == ESP_OK) {
@@ -58,6 +59,8 @@ static void led_service_task(void *arg) {
             }
         }
 
+        //Blink Logic, iterates through each LED which has its own blink state. 
+        //Checks if the current time - the time it was last toggled > the LED period
         TickType_t now = xTaskGetTickCount();
         for(size_t i = 0; i < LED_ID_SIZE; i++) {
             if(led_state[i].state == LED_STATE_BLINK) {
@@ -111,6 +114,7 @@ esp_err_t led_service_init(void) {
 }
 
 esp_err_t led_service_set_led(led_id_t id, led_state_t state, uint32_t period_ms) {
+    //Places all requests into the queue for the task to process, preventing blocking of other tasks
     if(id >= LED_ID_SIZE || state >= LED_STATE_SIZE) return ESP_ERR_INVALID_ARG;
     led_command_t command = {
         .id = id,
